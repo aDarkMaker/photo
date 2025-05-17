@@ -3,9 +3,8 @@
 > 🎨 将普通头像转换为赛博朋克风格的故障艺术！
 
 <div align="center">
-  <img src="avatar.jpg" width="200" alt="原始头像">
-  ➡️
-  <img src="avatar_glitch.jpg" width="200" alt="故障风格">
+  <img src="avatar.jpg" width="200" alt="处理前">
+  <img src="avatar_glitch.jpg" width="200" alt="默认处理">
 </div>
 
 ## 🎯 特性
