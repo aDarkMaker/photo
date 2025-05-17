@@ -65,7 +65,7 @@ MIT License
 
 [Orange]
 
-## 致谢
+## 借鉴
 
 - [Pillow (PIL)](https://python-pillow.org/)
 - [rembg](https://github.com/danielgatis/rembg)
