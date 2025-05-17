@@ -36,14 +36,14 @@ def create_sold_out_image():
         subject_bottom = bbox[3]
         
         # 计算水印位置，避免遮挡主体
-        x = max(item_img.width - watermark.width - 20,  # 默认右边距20像素
-               min(subject_right - watermark.width, item_img.width - watermark.width - 20))  # 确保不超出图片边界
-        y = max(item_img.height - watermark.height - 20,  # 默认下边距20像素
-               min(subject_bottom - watermark.height, item_img.height - watermark.height - 20))  # 确保不超出图片边界
+        x = max(item_img.width - watermark.width - 10,  # 默认右边距10像素
+               min(subject_right - watermark.width, item_img.width - watermark.width - 15))  # 确保不超出图片边界
+        y = max(item_img.height - watermark.height - 10,  # 默认下边距10像素
+               min(subject_bottom - watermark.height, item_img.height - watermark.height - 15))  # 确保不超出图片边界
     else:
         # 如果未检测到主体，使用默认位置（右下角）
-        x = item_img.width - watermark.width - 20
-        y = item_img.height - watermark.height - 20
+        x = item_img.width - watermark.width - 10
+        y = item_img.height - watermark.height - 10
     
     # 将水印粘贴到灰度图上
     gray_img.paste(watermark, (x, y), watermark)
