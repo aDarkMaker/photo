@@ -1,4 +1,4 @@
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImagePalette
 import os
 import numpy as np
 
@@ -14,6 +14,57 @@ class PixelArtConverter:
         self.input_path = input_path
         self.pixel_size = pixel_size
         self.image = Image.open(input_path)
+    
+    def apply_dithering(self, image):
+        """
+        应用抖动效果，使图像更有复古像素画的感觉
+        
+        Args:
+            image (Image): 输入图片
+        
+        Returns:
+            Image: 应用抖动效果后的图片
+        """
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+        
+        # 转换为带有抖动效果的图像
+        palette_image = image.convert('P', palette=Image.ADAPTIVE, colors=32, dither=Image.FLOYDSTEINBERG)
+        return palette_image.convert('RGB')
+
+    def apply_pixel_art_effect(self, image):
+        """
+        应用像素画效果增强
+        
+        Args:
+            image (Image): 输入图片
+        
+        Returns:
+            Image: 增强后的图片
+        """
+        # 增加局部对比度
+        enhancer = ImageEnhance.Contrast(image)
+        image = enhancer.enhance(1.5)
+        
+        # 增加锐度以突出边缘
+        enhancer = ImageEnhance.Sharpness(image)
+        image = enhancer.enhance(2.0)
+        
+        return image
+
+    def reduce_colors(self, image, num_colors=16):
+        """
+        减少颜色数量，并保持像素画风格的鲜明色彩
+        
+        Args:
+            image (Image): 输入图片
+            num_colors (int): 期望的颜色数量
+        
+        Returns:
+            Image: 处理后的图片
+        """
+        # 使用中位切割法进行颜色量化
+        return image.quantize(colors=num_colors, method=2).convert('RGB')
     
     def quantize_colors(self, image, num_colors=8):
         """
@@ -56,7 +107,7 @@ class PixelArtConverter:
         enhancer = ImageEnhance.Contrast(image)
         return enhancer.enhance(factor)
 
-    def convert_to_pixel_art(self, color_mode="color", num_colors=8, edge_enhance=1.5, contrast=1.3):
+    def convert_to_pixel_art(self, color_mode="color", num_colors=16, edge_enhance=2.0, contrast=1.5):
         """
         将图片转换为像素风格
         
@@ -73,43 +124,27 @@ class PixelArtConverter:
         width, height = self.image.size
         new_width = width - (width % self.pixel_size)
         new_height = height - (height % self.pixel_size)
-        image = self.image.resize((new_width, new_height))
         
-        # 如果是黑白模式，先转换为灰度图
+        # 首先将图片缩小，这样在放大时会产生更明显的像素效果
+        small_size = (new_width // self.pixel_size, new_height // self.pixel_size)
+        image = self.image.resize(small_size, Image.NEAREST)
+        
+        # 转换颜色模式
         if color_mode == "bw":
             image = image.convert("L")
-            pixel_image = Image.new("L", image.size)
         else:
-            # 对彩色图像进行颜色量化
-            image = self.quantize_colors(image, num_colors)
-            pixel_image = Image.new(image.mode, image.size)
+            # 减少颜色数量
+            image = self.reduce_colors(image, num_colors)
+            # 应用抖动效果
+            image = self.apply_dithering(image)
         
-        # 遍历图片，按像素块处理
-        for i in range(0, new_width, self.pixel_size):
-            for j in range(0, new_height, self.pixel_size):
-                # 获取像素块的平均颜色
-                box = (i, j, i + self.pixel_size, j + self.pixel_size)
-                region = image.crop(box)
-                if color_mode == "bw":
-                    color = int(sum(region.getdata()) / (self.pixel_size * self.pixel_size))
-                else:
-                    r = int(sum(p[0] for p in region.getdata()) / (self.pixel_size * self.pixel_size))
-                    g = int(sum(p[1] for p in region.getdata()) / (self.pixel_size * self.pixel_size))
-                    b = int(sum(p[2] for p in region.getdata()) / (self.pixel_size * self.pixel_size))
-                    color = (r, g, b)
-                
-                # 填充像素块
-                for x in range(i, i + self.pixel_size):
-                    for y in range(j, j + self.pixel_size):
-                        pixel_image.putpixel((x, y), color)
+        # 放大到原始尺寸，使用最近邻插值保持像素的锐利度
+        image = image.resize((new_width, new_height), Image.NEAREST)
         
-        # 应用边缘增强和对比度调整
-        if edge_enhance > 1.0:
-            pixel_image = self.enhance_edges(pixel_image, edge_enhance)
-        if contrast != 1.0:
-            pixel_image = self.adjust_contrast(pixel_image, contrast)
+        # 应用像素画效果增强
+        image = self.apply_pixel_art_effect(image)
         
-        return pixel_image
+        return image
     
     def save(self, output_path, converted_image):
         """
@@ -130,25 +165,27 @@ def main():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-    # 创建转换器实例
-    converter = PixelArtConverter(input_path, pixel_size=10)
+    # 创建转换器实例 - 使用较小的像素大小以获得更好的效果
+    converter = PixelArtConverter(input_path, pixel_size=4)
     
     # 生成增强的彩色像素风格
     color_image = converter.convert_to_pixel_art(
         color_mode="color",
-        num_colors=8,     # 减少颜色数量，使效果更明显
-        edge_enhance=1.5, # 增强边缘
-        contrast=1.3      # 增加对比度
+        num_colors=16,    # 使用较少的颜色以获得更明显的像素画效果
+        edge_enhance=2.0, # 增强边缘效果
+        contrast=1.5      # 适度增加对比度
     )
     converter.save(os.path.join(output_dir, "pixel_color.jpg"), color_image)
     
     # 生成增强的黑白像素风格
     bw_image = converter.convert_to_pixel_art(
         color_mode="bw",
-        edge_enhance=1.8, # 黑白模式下可以使用更强的边缘增强
-        contrast=1.5      # 黑白模式下增加更多对比度
+        edge_enhance=2.0,
+        contrast=1.8
     )
     converter.save(os.path.join(output_dir, "pixel_bw.jpg"), bw_image)
+    
+    print("Have Done!")
 
 if __name__ == "__main__":
     main()
