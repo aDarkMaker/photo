@@ -4,7 +4,7 @@ from PIL.ImageFilter import GaussianBlur
 
 def create_sold_out_image():
     # 打开原始商品图片
-    item_img = Image.open('item.jpg')
+    item_img = Image.open('item.png')
       # 使用rembg移除背景，获取主体，并稍微模糊处理
     subject = remove(item_img)
     subject = subject.filter(GaussianBlur(radius=1))  # 对主体轻微模糊，使边缘更自然
@@ -23,7 +23,7 @@ def create_sold_out_image():
     watermark = Image.open('sold-out.webp')
     
     # 计算合适的水印大小（基于图片宽度）
-    target_width = int(item_img.width * 0.5)  # 水印宽度设为图片宽度的1/2
+    target_width = int(item_img.width * 0.4)  # 水印宽度设为图片宽度的1/2
     ratio = target_width / watermark.width
     target_height = int(watermark.height * ratio)
     watermark = watermark.resize((target_width, target_height), Image.Resampling.LANCZOS)
@@ -36,14 +36,14 @@ def create_sold_out_image():
         subject_bottom = bbox[3]
         
         # 计算水印位置，避免遮挡主体
-        x = max(item_img.width - watermark.width - 10,  # 默认右边距10像素
+        x = max(item_img.width - watermark.width - 5,  # 默认右边距10像素
                min(subject_right - watermark.width, item_img.width - watermark.width - 15))  # 确保不超出图片边界
-        y = max(item_img.height - watermark.height - 10,  # 默认下边距10像素
+        y = max(item_img.height - watermark.height - 5,  # 默认下边距10像素
                min(subject_bottom - watermark.height, item_img.height - watermark.height - 15))  # 确保不超出图片边界
     else:
         # 如果未检测到主体，使用默认位置（右下角）
-        x = item_img.width - watermark.width - 10
-        y = item_img.height - watermark.height - 10
+        x = item_img.width - watermark.width - 8
+        y = item_img.height - watermark.height - 8
     
     # 将水印粘贴到灰度图上
     gray_img.paste(watermark, (x, y), watermark)
